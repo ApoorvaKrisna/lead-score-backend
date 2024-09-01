@@ -1,5 +1,4 @@
 from flask import Flask, request, jsonify
-from flask_ngrok import run_with_ngrok
 import joblib
 import numpy as np
 import pandas as pd
@@ -8,16 +7,12 @@ import io
 
 # Initialize Flask app
 app = Flask(__name__)
-run_with_ngrok(app)  # This will create a public URL
 
-# URLs of the model files on GitHub
-#MODEL_URL = 'https://raw.githubusercontent.com/your-username/your-repo/main/lead_scoring_model.pkl'
 # URLs of the model file chunks on GitHub
 MODEL_CHUNKS_URLS = [
     'https://github.com/ApoorvaKrisna/lead-score-backend/raw/main/lead_scoring_model.pkl.part0',
     'https://github.com/ApoorvaKrisna/lead-score-backend/raw/main/lead_scoring_model.pkl.part1',
     'https://github.com/ApoorvaKrisna/lead-score-backend/raw/main/lead_scoring_model.pkl.part2'
-    # Add more URLs as needed
 ]
 PREPROCESSOR_URL = 'https://github.com/ApoorvaKrisna/lead-score-backend/raw/main/preprocessor.pkl'
 
@@ -27,10 +22,7 @@ def load_file_from_github(url):
     response.raise_for_status()
     return joblib.load(io.BytesIO(response.content))
 
-# Load the pre-trained model and preprocessor
-#model = load_file_from_github(MODEL_URL)
-preprocessor = load_file_from_github(PREPROCESSOR_URL)
-
+# Assemble the model from chunks and load it
 def download_and_assemble_model():
     model_file_path = 'lead_scoring_model.pkl'
     with open(model_file_path, 'wb') as f:
@@ -41,8 +33,9 @@ def download_and_assemble_model():
     
     return joblib.load(model_file_path)
 
-# Load the model
+# Load the pre-trained model and preprocessor
 model = download_and_assemble_model()
+preprocessor = load_file_from_github(PREPROCESSOR_URL)
 
 # Define the allocation function based on features
 def allocate_team_based_on_features(row):
@@ -61,7 +54,7 @@ def allocate_team_based_on_features(row):
     else:
         return 7
 
-@app.route('/score/', methods=['POST'])
+@app.route('/score', methods=['POST'])
 def score_lead():
     try:
         lead_data = request.json
@@ -92,5 +85,5 @@ def score_lead():
         return jsonify({"error": str(e)}), 400
 
 if __name__ == "__main__":
-    app.run()
-
+    # Run the app on the port Render expects
+    app.run(host='0.0.0.0', port=5000)
