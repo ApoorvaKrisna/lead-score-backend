@@ -58,6 +58,8 @@ def allocate_team_based_on_features(row):
 def score_lead():
     try:
         lead_data = request.json
+        if not lead_data:
+            raise ValueError("Invalid input data")
         lead_df = pd.DataFrame([lead_data])
         
         # Preprocess the input data
