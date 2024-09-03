@@ -1,4 +1,5 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import joblib
 import numpy as np
 import pandas as pd
@@ -7,6 +8,7 @@ import io
 
 # Initialize Flask app
 app = Flask(__name__)
+CORS(app, resources={r"/score": {"origins": "https://apoorvakrisna.github.io/personal-website/lead_scoring_interface"}})
 
 # URLs of the model file chunks on GitHub
 MODEL_CHUNKS_URLS = [
