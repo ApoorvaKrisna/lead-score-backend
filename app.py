@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import requests
 import io
+from pymongo import MongoClient
 
 # Initialize Flask app
 app = Flask(__name__)
@@ -17,6 +18,15 @@ MODEL_CHUNKS_URLS = [
     'https://github.com/ApoorvaKrisna/lead-score-backend/raw/main/lead_scoring_model.pkl.part2'
 ]
 PREPROCESSOR_URL = 'https://github.com/ApoorvaKrisna/lead-score-backend/raw/main/preprocessor.pkl'
+
+
+# Replace with your connection string
+mongo_client = MongoClient("mongodb+srv://user:leadSc0re@cluster0.2cfpn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0")
+db = mongo_client['sample_mflix']  # Replace with your database name
+
+
+# Example: Access a collection
+collection = db['testCollection']
 
 # Load model and preprocessor from GitHub
 def load_file_from_github(url):
@@ -91,6 +101,12 @@ def score_lead():
 @app.route('/health', methods=['GET'])
 def health_check():
     return jsonify({"status": "healthy"}), 200
+
+@app.route('/testMongo')
+def testMongo():
+    # Example: Insert a document
+    collection.insert_one({"name": "test", "value": 123})
+    return "Connected to MongoDB!"
     
 if __name__ == "__main__":
     # Run the app on the port Render expects
