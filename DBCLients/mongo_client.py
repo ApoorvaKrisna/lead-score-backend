@@ -2,9 +2,10 @@ from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 class MongoDBClient:
-    def __init__(self, uri, database_name):
-        self.client = MongoClient(uri)
-        self.database = self.client[database_name]
+    url=''
+    def __init__(self):
+        self.client = MongoClient(MongoDBClient.url)
+        self.database = self.client['database_name']
 
     def create_collection(self, collection_name):
         try:

@@ -4,9 +4,9 @@ from psycopg2 import sql, OperationalError
 class CockroachDBClient:
     _pool = None
 
-    def __init__(self, host, database, user, password, pool_size=10):
+    def __init__(self):
         if CockroachDBClient._pool is None:
-            CockroachDBClient._pool = self.create_pool(host, database, user, password, pool_size)
+            CockroachDBClient._pool = self.create_pool('host', 'database', 'user', 'password', 10)
 
     @classmethod
     def create_pool(cls, host, database, user, password, pool_size):
