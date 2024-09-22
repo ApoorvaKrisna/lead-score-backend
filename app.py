@@ -5,9 +5,19 @@ import numpy as np
 import pandas as pd
 import requests
 import io
+from Services.lead_score_service import lead
+from Services.agent_allocation_service import agent
+
+from Services.notification_service import notify
 
 # Initialize Flask app
 app = Flask(__name__)
+
+app.register_blueprint(lead)
+app.register_blueprint(agent)
+app.register_blueprint(notify)
+
+
 CORS(app, resources={r"/score": {"origins": "https://apoorvakrisna.github.io/personal-website/lead_scoring_interface"}})
 
 # URLs of the model file chunks on GitHub
