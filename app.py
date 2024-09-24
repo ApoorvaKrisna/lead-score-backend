@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import joblib
 import numpy as np
@@ -55,6 +55,10 @@ def allocate_team_based_on_features(row):
         return 6
     else:
         return 7
+
+@app.route('/')
+def home():
+    return render_template('index.html')
 
 @app.route('/score', methods=['POST'])
 def score_lead():

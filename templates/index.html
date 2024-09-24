@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lead Service Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7fc;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            color: #4a90e2;
+        }
+        .tabs {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+        .tabs button {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            margin: 0 5px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        .tabs button:hover {
+            background-color: #357ABD;
+        }
+        .tab {
+            display: none;
+            padding: 20px;
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            width: 80%;
+            margin: auto;
+        }
+        .tab.active {
+            display: block;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 10px;
+            font-family: monospace;
+            background-color: #f9f9f9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #4a90e2;
+            color: white;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover {
+            background-color: #f1f1f1;
+        }
+        input[type="text"], select {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+        }
+        button {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #357ABD;
+        }
+        h3 {
+            color: #4a90e2;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Lead Service Dashboard</h1>
+
+    <div class="tabs">
+        <button onclick="showTab('lead-input')">Lead Input</button>
+        <button onclick="showTab('create-agent')">Create Agent</button>
+        <button onclick="showTab('overall-status')">Overall Status</button>
+        <button onclick="showTab('agent-dashboard')">Agent Dashboard</button>
+    </div>
+
+    <!-- Lead Input Tab -->
+    <div id="lead-input" class="tab active">
+        <h2>Lead Input Dashboard</h2>
+        <textarea id="leadInputJson">{ "age": 33, "job": "technician", "marital": "single", "education": "secondary", "default": "no", "balance": 29, "housing": "yes", "loan": "no", "contact": "NaN", "day_of_week": 5, "month": "may", "duration": 151, "campaign": 1, "pdays": -1, "previous": 0, "poutcome": "NaN" }</textarea>
+        <button onclick="formatJSON()">Format JSON</button>
+        <button onclick="submitLead()">Submit Lead</button>
+        <h3>Lead Result:</h3>
+        <p id="leadResult"></p>
+    </div>
+
+    <!-- Create Agent Tab -->
+    <div id="create-agent" class="tab">
+        <h2>Create Agent</h2>
+        <form id="agentForm">
+            <label for="agentName">Agent Name:</label>
+            <input type="text" id="agentName" required><br><br>
+            <label for="agentTeam">Agent Team:</label>
+            <input type="text" id="agentTeam" required><br><br>
+            <button type="button" onclick="createAgent()">Create Agent</button>
+        </form>
+        <h3>Agent Result:</h3>
+        <p id="agentResult"></p>
+    </div>
+
+    <!-- Overall Lead Status Tab -->
+    <div id="overall-status" class="tab">
+        <h2>Overall Lead Status and Agent Mapping</h2>
+        <table id="leadStatusTable">
+            <thead>
+                <tr>
+                    <th>Lead ID</th>
+                    <th>Lead Status</th>
+                    <th>Assigned Agent</th>
+                    <th>Process</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- Sample Data -->
+                <tr>
+                    <td>1</td>
+                    <td>Booked</td>
+                    <td>Agent 1</td>
+                    <td>Documentation</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Case Login</td>
+                    <td>Agent 2</td>
+                    <td>Application</td>
+                </tr>
+                <tr>
+                    <td>3</td>
+                    <td>Issued</td>
+                    <td>Agent 3</td>
+                    <td>Review</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Agent Dashboard Tab -->
+    <div id="agent-dashboard" class="tab">
+        <h2>Agent Dashboard</h2>
+        <label for="teamDropdown">Filter by Team:</label>
+        <select id="teamDropdown" onchange="filterAgentsByTeam()">
+            <option value="Team A">Team A</option>
+            <option value="Team B">Team B</option>
+            <option value="Team C">Team C</option>
+        </select>
+
+        <label for="agentId">Enter Agent ID:</label>
+        <input type="text" id="agentId" placeholder="Enter Agent ID"><br><br>
+
+        <h3>Assigned Leads:</h3>
+        <table id="agentLeadTable">
+            <thead>
+                <tr>
+                    <th>Lead ID</th>
+                    <th>Lead Status</th>
+                    <th>Update Status</th>
+                    <th>Submit</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td>Booked</td>
+                    <td>
+                        <select>
+                            <option value="Booked">Booked</option>
+                            <option value="Case Login">Case Login</option>
+                            <option value="Documentation">Documentation</option>
+                            <option value="Issued">Issued</option>
+                        </select>
+                    </td>
+                    <td><button onclick="updateLeadStatus()">Update</button></td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td>Case Login</td>
+                    <td>
+                        <select>
+                            <option value="Booked">Booked</option>
+                            <option value="Case Login">Case Login</option>
+                            <option value="Documentation">Documentation</option>
+                            <option value="Issued">Issued</option>
+                        </select>
+                    </td>
+                    <td><button onclick="updateLeadStatus()">Update</button></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        function showTab(tabId) {
+            const tabs = document.querySelectorAll('.tab');
+            tabs.forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        function formatJSON() {
+            const textarea = document.getElementById('leadInputJson');
+            try {
+                const json = JSON.parse(textarea.value);
+                textarea.value = JSON.stringify(json, null, 4); // Pretty print the JSON
+            } catch (error) {
+                alert('Invalid JSON input');
+            }
+        }
+
+        function submitLead() {
+            const leadResult = { "score": 850, "grade": "A", "team": 3 }; // Simulated response
+            document.getElementById('leadResult').innerText = `Score: ${leadResult.score}, Grade: ${leadResult.grade}, Assigned Team: ${leadResult.team}`;
+        }
+
+        function createAgent() {
+            const agentResult = { "agent": "Agent 1", "team": "Team A", "ageing": "2 weeks" }; // Simulated response
+            document.getElementById('agentResult').innerText = `Agent Created: ${agentResult.agent}, Team: ${agentResult.team}, Ageing: ${agentResult.ageing}`;
+        }
+
+        function filterAgentsByTeam() {
+            // Filter agent logic
+        }
+
+        function updateLeadStatus() {
+            alert('Lead Status Updated!');
+        }
+    </script>
+
+</body>
+</html>
