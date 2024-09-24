@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, render_template
 from flask_cors import CORS
 from Services.lead_score_service import lead
 from Services.agent_allocation_service import agent
@@ -14,6 +14,10 @@ app.register_blueprint(notify)
 '''
 
 CORS(app)
+
+@app.route('/')
+def home():
+    return render_template('index.html')
         
 @app.route('/health', methods=['GET'])
 def health_check():
