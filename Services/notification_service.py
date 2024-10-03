@@ -1,3 +1,9 @@
+
+def notify(message):
+    # Logic to send notification
+    print(f"Notification sent: {message}")
+
+'''
 from flask import Blueprint, request, jsonify, send_from_directory
 import pika
 import json
@@ -73,3 +79,4 @@ channel.basic_consume(queue='notifications', on_message_callback=callback, auto_
 
 print('Waiting for messages. To exit press CTRL+C')
 channel.start_consuming()
+'''
