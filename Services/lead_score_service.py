@@ -2,7 +2,6 @@ from flask import Blueprint, jsonify, request
 import joblib
 import numpy as np
 import pandas as pd
-from sklearn.preprocessing import MinMaxScaler
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
 
@@ -15,19 +14,24 @@ MODEL_CHUNKS_URLS = [
 # To reload the dictionary from the file
 scores_dict = joblib.load('scores_dict.pkl')
 
+preprocessor = joblib.load('preprocessor.pkl')
+
+# Updating the list of columns to consider
 independent_features = [
     'leadsource', 'Custom_UTM_U', 'Brandname1', 'Age_Bucket', 'Income_Bucket',
     'isbirthday', 'Income_Flag', 'IsRepeat', 'IsSelfSelect', 'Previous_Booked',
-    'compare_flag', 'limited_flag', 'trop_flag'
+    'compare_flag', 'limited_flag', 'trop_flag','TobaccoUser','ProfessionType','educationQualificationId'
 ]
 
-score_cols = ['leadsource_score', 'Custom_UTM_U_score', 'Brandname1_score', 'Age_Bucket_score', 
-              'Income_Bucket_score', 'isbirthday_score', 'Income_Flag_score', 'IsRepeat_score', 
-              'IsSelfSelect_score', 'Previous_Booked_score', 'compare_flag_score', 
-              'limited_flag_score', 'trop_flag_score']
-
-
 def preprocess_data(data, scores_dict):
+
+    # Replace NaN in 'Booking' and 'APE' and education Qualification with 0
+    data = data.reindex(
+        columns=data.columns.union(
+            ['Booking', 'APE', 'educationQualificationId', 'TobaccoUser', 'ProfessionType'], sort=False)).fillna(
+                {'Booking': 0, 'APE': 0, 'educationQualificationId': 'Other', 'TobaccoUser': 'Other', 'ProfessionType': 'Other'})
+
+
     # Handle invalid(0 and negative Income) values in 'AnnualIncome' if the column exists
     if 'AnnualIncome' in data.columns:
         data['AnnualIncome'].replace([0, -float('inf')], 'other', inplace=True)
@@ -100,12 +104,11 @@ def create_preprocessor_pipeline(independent_features, scores_dict):
         return preprocess_data(data, scores_dict)
 
     return Pipeline(steps=[
-        ('preprocess', FunctionTransformer(preprocess_transformer, validate=False)),
-        ('scaler', MinMaxScaler())
+        ('preprocess', FunctionTransformer(preprocess_transformer, validate=False))
     ])
 
 # Assemble the model from chunks and load it
-def download_and_assemble_model():
+def assemble_model():
     model_file_path = 'lead_scoring_model.pkl'
     with open(model_file_path, 'wb') as f:
         for chunk in MODEL_CHUNKS_URLS:
@@ -116,9 +119,20 @@ def download_and_assemble_model():
     return joblib.load(model_file_path)
 
 # Load the pre-trained model and preprocessor
-model = download_and_assemble_model()
+model = assemble_model()
 
+# Create the preprocessing pipeline
 pipeline = create_preprocessor_pipeline(independent_features, scores_dict)
+
+def lead_grade(lead_score):
+    if lead_score > 1832:
+        return 1
+    elif lead_score > 933:
+        return 2
+    elif lead_score > 455:
+        return 3
+    else:
+        return 4
 
 # Define the allocation function based on features
 def allocate_team_based_on_features(row):
@@ -147,30 +161,28 @@ def score_lead():
         print(lead_df.head())
         
         # Preprocess the input data
-        processed_data_array = pipeline.fit_transform(lead_df)
-        processed_data = pd.DataFrame(processed_data_array, columns=score_cols)
+        processed_data = pipeline.fit_transform(lead_df)
+        processed_data_df = processed_data.rename(columns=lambda col: col.replace('_score', ''))
+        processed_data_scaled = preprocessor.fit_transform(processed_data_df)
         print("preprocess_data")
         
         # Predict the probability
-        probability = model.predict(processed_data)[0]
-        print(probability)
-        
-        # Scale the score
-        scaled_score = np.interp(probability, (0, 1), (1, 1000))[0]
-        print(scaled_score)
+        lead_score = float(model.predict(processed_data_scaled)[0][0])
+        print(lead_score)
+        print(type(lead_score))
         
         # Determine the grade
-        # grade_thresholds = np.percentile(scaled_score, [250, 500, 750])
-        grade = 1#np.digitize(scaled_score, grade_thresholds)
+        grade = lead_grade(lead_score)
+        print(grade)
         
         # Allocate team
         team = allocate_team_based_on_features(lead_data)
-        
+        print(team)
         #send_to_allocate(new_lead,score)
         
         return jsonify({
-            "score": scaled_score,
-            "grade": int(grade + 1),  # Grades start from 1
+            "score": lead_score,
+            "grade": grade,
             "team": team
         })
     except Exception as e:
