@@ -4,8 +4,15 @@ import numpy as np
 import pandas as pd
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
+from pymongo import MongoClient
 
 lead = Blueprint('leadScore', __name__)
+
+# Initialize MongoDB client
+url='mongodb+srv://user:leadSc0re@cluster0.2cfpn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
+mongo_client = MongoClient(url)
+db = mongo_client['LeadDB'] 
+collection = db['LeadRawData']
 
 # URLs of the model file chunks on GitHub
 MODEL_CHUNKS_URLS = [
@@ -30,7 +37,6 @@ def preprocess_data(data, scores_dict):
             ['Booking', 'APE', 'educationQualificationId', 'TobaccoUser', 'ProfessionType'], sort=False)).fillna(
                 {'Booking': 0, 'APE': 0, 'educationQualificationId': 0, 'TobaccoUser': 0, 'ProfessionType': 0})
 
-    print(data['TobaccoUser'])
     # Handle invalid(0 and negative Income) values in 'AnnualIncome' if the column exists
     if 'AnnualIncome' in data.columns:
         data['AnnualIncome'].replace([0, -float('inf')], 'other', inplace=True)
@@ -114,12 +120,8 @@ def preprocess_data(data, scores_dict):
                     # If it's not a number, continue without changes
                     pass
     
-    # print("data merged")
-    # Drop original categorical columns and keep only the score columns
-    
     categorical_scores = [f'{col}_score' for col in scores_dict.keys()]
     data = data[categorical_scores]
-    print(data.columns)
 
     return data
 
@@ -176,12 +178,31 @@ def allocate_team_based_on_features(row):
     else:
         return 7
 
+
+@lead.route('/testMongo', methods=['GET'])
+def testMongo():
+    collection.insert_one({"name": "test", "value": 123})
+    return "Connected to MongoDB!"
+
 @lead.route('/score', methods=['POST'])
 def score_lead():
     try:
         lead_data = request.json
         if not lead_data:
             raise ValueError("Invalid input data")
+        
+        # Store raw lead data in LeadRawData collection
+        lead_id = lead_data.get('leadid')
+        if not lead_id:
+            raise ValueError("Lead ID is missing")
+        
+        # Upsert into LeadRawData collection
+        result = collection.update_one(
+            {'_id': lead_id},
+            {'$set': lead_data},  # Use $set to update fields in the document
+            upsert=True  # Insert the document if it doesn't exist
+        )
+        
         lead_df = pd.DataFrame([lead_data])
         print(lead_df.head())
         

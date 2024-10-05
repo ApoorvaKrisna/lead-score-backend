@@ -2,10 +2,10 @@ from pymongo import MongoClient
 from pymongo.errors import DuplicateKeyError, PyMongoError
 
 class MongoDBClient:
-    url=''
+    url='mongodb+srv://user:leadSc0re@cluster0.2cfpn.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0'
     def __init__(self):
         self.client = MongoClient(MongoDBClient.url)
-        self.database = self.client['database_name']
+        self.database = self.client['LeadDB']
 
     def create_collection(self, collection_name):
         try:
@@ -52,6 +52,21 @@ class MongoDBClient:
         except PyMongoError as e:
             print(f"Error deleting document: {e}")
             return 0
+
+    # Method for upserting a document into a collection
+    def upsert(self, collection_name, filter_dict, update_dict):
+        """
+        Upsert a document into the specified collection.
+        - collection_name: The name of the collection where the data should be upserted.
+        - filter_dict: The filter criteria (typically _id or unique fields).
+        - update_dict: The data to be set/updated.
+        """
+        collection = self.database[collection_name]
+        collection.update_one(
+            filter_dict,
+            {'$set': update_dict},
+            upsert=True
+        )
 
     def close(self):
         self.client.close()
