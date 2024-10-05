@@ -164,19 +164,19 @@ def lead_grade(lead_score):
 # Define the allocation function based on features
 def allocate_team_based_on_features(row):
     if row['AnnualIncome'] > 1500000:
-        return "HNITeam"
+        return "HNI"
     elif row['IsRepeat'] > 0:
-        return "RepeatTeam"
+        return "BKGS"
     elif row['isbirthday'] == 1:
-        return "BirthDayTeam"
+        return "BDAY"
     elif row['isctc'] == 1:
-        return "CTCTeam"
+        return "Marathi-APE"
     elif row['Age'] < 30:
-        return "AgeBelow30Team"
+        return "APE Salaried"
     elif 30 <= row['Age'] <= 50:
-        return "AgeAbove30Team"
+        return "HNI"
     else:
-        return 7
+        return "OTHER"
 
 
 @lead.route('/testMongo', methods=['GET'])
