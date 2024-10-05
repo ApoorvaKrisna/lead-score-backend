@@ -105,7 +105,6 @@
 
     <div class="tabs">
         <button onclick="showTab('lead-input')">Lead Input</button>
-        <button onclick="showTab('create-agent')">Create Agent</button>
         <button onclick="showTab('overall-status')">Overall Status</button>
         <button onclick="showTab('agent-dashboard')">Agent Dashboard</button>
     </div>
@@ -121,7 +120,7 @@
     </div>
 
     <!-- Create Agent Tab -->
-    <div id="create-agent" class="tab">
+    <!-- <div id="create-agent" class="tab">
         <h2>Create Agent</h2>
         <form id="agentForm">
             <label for="agentName">Agent Name:</label>
@@ -132,11 +131,12 @@
         </form>
         <h3>Agent Result:</h3>
         <p id="agentResult"></p>
-    </div>
+    </div> -->
 
     <!-- Overall Lead Status Tab -->
     <div id="overall-status" class="tab">
         <h2>Overall Lead Status and Agent Mapping</h2>
+        <button onclick="fetchLeadMapping()">Refresh Data</button>
         <table id="leadStatusTable">
             <thead>
                 <tr>
@@ -233,7 +233,7 @@
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 
     <script>
-        let url=url+''
+        let url='http://192.168.1.4:5000/'
         function showTab(tabId) {
             const tabs = document.querySelectorAll('.tab');
             tabs.forEach(tab => {

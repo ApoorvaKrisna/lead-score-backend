@@ -209,26 +209,26 @@ def score_lead():
         )
         
         lead_df = pd.DataFrame([lead_data])
-        print(lead_df.head())
+        # print(lead_df.head())
         
         # Preprocess the input data
         processed_data = pipeline.fit_transform(lead_df)
         processed_data_df = processed_data.rename(columns=lambda col: col.replace('_score', ''))
         processed_data_scaled = scaler.transform(processed_data_df)
-        print(processed_data_scaled)
+        # print(processed_data_scaled)
         
         # Predict the probability
         lead_score = float(model.predict(processed_data_scaled)[0][0])
-        print(lead_score)
-        print(type(lead_score))
+        # print(lead_score)
+        # print(type(lead_score))
         
         # Determine the grade
         grade = lead_grade(lead_score)
-        print(grade)
+        # print(grade)
         
         # Allocate team
         team = allocate_team_based_on_features(lead_data)
-        print(team)
+        # print(team)
         
         allocationResponse = "allocation response"
         try:
@@ -247,7 +247,7 @@ def score_lead():
             "team": team,
             "status": allocationResponse
         })
-        print(jsonRespose)
+        # print(jsonRespose)
         
         return response
     except Exception as e:

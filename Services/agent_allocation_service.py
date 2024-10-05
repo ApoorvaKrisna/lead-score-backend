@@ -26,7 +26,7 @@ def agent_allocation_helper(request):
     cdb=CockroachClient()
     cdb.connect()
     rec=cdb.fetch_all('''select * from agent_score where grade = %s and team_name=%s order by grade_ranking desc;''',(request["grade"],request["team"]))
-    print(rec)
+    # print(rec)
     cdb.close()
     n=len(rec)
     ls=[]
@@ -54,11 +54,11 @@ def agent_allocation_helper(request):
     # no action of lead already exists in mapping
     if(lead_exist(request["leadid"])):
         return jsonify(dict), 201
-    print(dict)
+    # print(dict)
     allocate_lead(ls[COUNTER[str(dict["grade"])]%n])
     update_agent(ls[COUNTER[str(dict["grade"])]%n])
     COUNTER[str(dict["grade"])]=COUNTER[str(dict["grade"])]+1  
-    print(ls)
+    # print(ls)
     return jsonify(dict), 201
 
 def lead_exist(id):
@@ -110,10 +110,10 @@ def get_all_agents():
 @agent.route('/GetAllLeads/', methods=['GET']) 
 def get_leads_for_agent():
     id = request.args.get('agentId')
-    print(type(id))
+    # print(type(id))
     cdb=CockroachClient()
     cdb.connect()
-    print('''select * from lead_mapping where employeeid='''+id.upper())
+    # print('''select * from lead_mapping where employeeid='''+id.upper())
     rec=cdb.fetch_all('''select * from lead_mapping where employeeid='''+"'"+id.upper()+"'")
     cdb.close()
     return jsonify(rec), 201
@@ -122,7 +122,7 @@ def get_leads_for_agent():
 def get_leads_mapping():
     cdb=CockroachClient()
     cdb.connect()
-    print('''select * from lead_mapping''')
+    # print('''select * from lead_mapping''')
     rec=cdb.fetch_all('''select * from lead_mapping''')
     cdb.close()
     return jsonify(rec), 201
@@ -132,7 +132,7 @@ def update_Lead_Status():
     cdb=CockroachClient()
     cdb.connect()
     #print('''select * from lead_mapping''')
-    print('''update lead_mapping set status='''+"'"+request.json["status"]+"'"+" where lead_id="+str(request.json["lead_id"]))
+    # print('''update lead_mapping set status='''+"'"+request.json["status"]+"'"+" where lead_id="+str(request.json["lead_id"]))
     rec=cdb.execute_query('''update lead_mapping set status='''+"'"+request.json["status"]+"'"+" where lead_id="+str(request.json["lead_id"]))
     cdb.close()
     return jsonify(rec), 201
@@ -224,7 +224,8 @@ class ConsistentHashing:
             for node in nodes:
                 self.add_node(node)
         else:
-            print(nodes)  # Print error if fetching nodes failed
+            ""
+            # print(nodes)  # Print error if fetching nodes failed
 
     def remove_node(self, node):
         """Remove a node and its virtual nodes from the hash ring."""
