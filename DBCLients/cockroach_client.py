@@ -133,3 +133,59 @@ class CockroachDBClient:
 
 
     
+class CockroachClient:
+    def __init__(self):
+        self.connection = None
+        self.cursor = None
+        self.host = 'lead-manage-2232.jxf.gcp-asia-southeast1.cockroachlabs.cloud'
+        self.port = 26257
+        self.database = 'defaultdb'
+        self.user = 'aadarsh'
+        self.password = 'SGOawdGmMLKuFKjoqdOdWg'
+
+    def connect(self):
+        """Connect to the CockroachDB database."""
+        try:
+            self.connection = psycopg2.connect(
+                host=self.host,
+                port=self.port,
+                database=self.database,
+                user=self.user,
+                password=self.password
+            )
+            self.cursor = self.connection.cursor()
+            print("Connection to CockroachDB successful!")
+        except OperationalError as e:
+            print(f"The error '{e}' occurred")
+
+    def execute_query(self, query, params=None):
+        """Execute a single query."""
+        try:
+            if params:
+                self.cursor.execute(query, params)
+            else:
+                self.cursor.execute(query)
+            self.connection.commit()
+            print(f"query Executed")
+        except OperationalError as e:
+            print(f"The error '{e}' occurred")
+
+    def fetch_all(self, query, params=None):
+        """Fetch all results from a query."""
+        try:
+            if params:
+                self.cursor.execute(query, params)
+            else:
+                self.cursor.execute(query)
+            return self.cursor.fetchall()
+        except OperationalError as e:
+            print(f"The error '{e}' occurred")
+            return None
+
+    def close(self):
+        """Close the database connection."""
+        if self.cursor:
+            self.cursor.close()
+        if self.connection:
+            self.connection.close()
+        print("Connection closed.")
