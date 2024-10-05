@@ -2,6 +2,7 @@ from flask import Blueprint, jsonify, request
 import joblib
 import numpy as np
 import pandas as pd
+import json
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
 from pymongo import MongoClient
@@ -226,13 +227,14 @@ def score_lead():
         team = allocate_team_based_on_features(lead_data)
         print(team)
         
+        allocationResponse = "allocation response"
         try:
-            json={
+            jsonRespose={
                 "grade":grade,
                 "team":team,
                 "leadid":lead_id
             }
-            allocationResponse = agent_allocation_helper(json)
+            allocationResponse = json.dumps(agent_allocation_helper(jsonRespose)[0].get_json())
         except:
             allocationResponse = "allocation failed"
 
@@ -242,6 +244,7 @@ def score_lead():
             "team": team,
             "status": allocationResponse
         })
+        print(jsonRespose)
         
         return response
     except Exception as e:
