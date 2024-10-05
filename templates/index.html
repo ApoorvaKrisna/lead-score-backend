@@ -291,8 +291,11 @@
 
         function updateLeadStatus(lead_id) {
             $.ajax({
-                url: 'http://127.0.0.1:5001/updateLeadStatus',
+                url: 'http://192.168.1.4:5000/updateLeadStatus',
                 method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
                 data:JSON.stringify({
                     "status":document.getElementById("status"+lead_id).value,
                     "lead_id":lead_id,

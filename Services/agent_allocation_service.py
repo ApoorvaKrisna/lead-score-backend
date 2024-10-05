@@ -125,7 +125,8 @@ def update_Lead_Status():
     cdb=CockroachClient()
     cdb.connect()
     #print('''select * from lead_mapping''')
-    rec=cdb.execute_query('''update lead_mapping set status='''+"'"+request.json["status"]+"where lead_id="+request.json["lead_id"])
+    print('''update lead_mapping set status='''+"'"+request.json["status"]+"'"+" where lead_id="+str(request.json["lead_id"]))
+    rec=cdb.execute_query('''update lead_mapping set status='''+"'"+request.json["status"]+"'"+" where lead_id="+str(request.json["lead_id"]))
     cdb.close()
     return jsonify(rec), 201
 
