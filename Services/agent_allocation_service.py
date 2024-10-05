@@ -4,6 +4,7 @@ from time import timezone
 from flask import Blueprint, jsonify, request
 import hashlib
 import bisect
+import pandas as pd
 
 from DBCLients.cockroach_client import CockroachClient
 
@@ -19,7 +20,7 @@ COUNTER={
 def agent_allocation():
     cdb=CockroachClient()
     cdb.connect()
-    rec=cdb.fetch_all('''select * from employee_data where grade = %s and Matrix_Group_y=%s order by employeeid;''',(request.json["grade"],request.json["team"]))
+    rec=cdb.fetch_all('''select * from agent_score where grade = %s and Matrix_Group_y=%s order by employeeid;''',(request.json["grade"],request.json["team"]))
     print(rec)
     cdb.close()
     n=len(rec)
@@ -71,7 +72,7 @@ def update_agent(dict):
     cdb=CockroachClient()
     cdb.connect()
     cdb.execute_query("""
-            update employee_data set bucket=%s where employeeid=%s
+            update agent_score set bucket=%s where employeeid=%s
         """, (
             dict['bucket']+1,
             dict['employeeid']
@@ -84,7 +85,7 @@ def update_agent(dict):
 def get_all_agents():
     cdb=CockroachClient()
     cdb.connect()
-    rec=cdb.fetch_all('''select * from employee_data''')
+    rec=cdb.fetch_all('''select * from agent_score''')
     cdb.close()
     return jsonify(rec), 201
 
@@ -105,11 +106,13 @@ def save_json():
     i=0
 #     cdb=CockroachClient()
 #     cdb.connect()
-#     cdb.execute_query('''CREATE TABLE lead_mapping (
+#     cdb.execute_query('''CREATE TABLE agent_score (
 # 	employeeid VARCHAR(20),
-# 	leadid serial PRIMARY KEY,
-# 	team VARCHAR ( 50 ) NOT NULL,
-# 	created_on TIMESTAMP NOT NULL,
+#     employee_name VARCHAR(50),
+# 	team_name VARCHAR(20),
+# 	grade int NOT NULL,
+# 	grade_ranking int NOT NULL,
+#     bucket int default 0
 # );''')
 #     cdb.close()
 #     return jsonify("lead allocated"), 201
@@ -127,7 +130,7 @@ def save_json():
             grade="D"
 
         cdb.execute_query("""
-            INSERT INTO employee_data (
+            INSERT INTO agent_score (
                 employeeid,
                 username_y,
                 Total_Leads,
@@ -145,7 +148,20 @@ def save_json():
         i+=1
     return jsonify("lead allocated"), 201
 
+@agent.route('/ExcelToTable', methods=['POST'])
+def upload_excel_to_db():
+    df = pd.read_excel('excel_file')
+    cdb=CockroachClient()
+    cdb.connect()
 
+    for index, row in df.iterrows():
+        cdb.execute_query("""
+            INSERT INTO agent_score (employeeid, employee_name, team_name, grade, grade_ranking, bucket)
+            VALUES (%s, %s, %s, %s, %s, %s)
+        """, (row['employeeid'], row['employee_name'], row['team_name'], 
+              row['grade'], row['grade_ranking'], row.get('bucket', 0)))
+
+    cdb.close()
 
 class ConsistentHashing:
     def __init__(self, replicas=3):
