@@ -10,17 +10,17 @@ from DBCLients.cockroach_client import CockroachClient
 
 agent = Blueprint('agentAllocation', __name__)
 COUNTER={
-    "A":0,
-    "B":0,
-    "C":0,
-    "D":0
+    "1":0,
+    "2":0,
+    "3":0,
+    "4":0
 }
 
 @agent.route('/agentAllocation', methods=['POST'])
 def agent_allocation():
     cdb=CockroachClient()
     cdb.connect()
-    rec=cdb.fetch_all('''select * from agent_score where grade = %s and Matrix_Group_y=%s order by employeeid;''',(request.json["grade"],request.json["team"]))
+    rec=cdb.fetch_all('''select * from agent_score where grade = %s and team_name=%s order by grade_ranking desc;''',(request.json["grade"],request.json["team"]))
     print(rec)
     cdb.close()
     n=len(rec)
@@ -29,7 +29,7 @@ def agent_allocation():
         dict={}
         dict["employeeid"]=entry[0]
         dict["username"]=entry[1]
-        dict["grade"]=entry[-2]
+        dict["grade"]=entry[-3]
         dict["bucket"]=entry[-1]
         dict["team"]=request.json["team"]
         ls.append(dict)
@@ -45,9 +45,9 @@ def agent_allocation():
         
         ch=ConsistentHashing()
         ch.add_node(dict)
-    allocate_lead(ls[COUNTER[dict["grade"]]%n])
-    update_agent(ls[COUNTER[dict["grade"]]%n])
-    COUNTER[dict["grade"]]=COUNTER[dict["grade"]]+1  
+    allocate_lead(ls[COUNTER[str(dict["grade"])]%n])
+    update_agent(ls[COUNTER[str(dict["grade"])]%n])
+    COUNTER[str(dict["grade"])]=COUNTER[str(dict["grade"])]+1  
     print(ls)
     return jsonify("lead allocated"), 201
 
@@ -121,13 +121,13 @@ def save_json():
         cdb.connect()
         grade=""
         if(i%4==0):
-            grade="A"
+            grade="1"
         if(i%4==1):
-            grade="B"
+            grade="2"
         if(i%4==2):
-            grade="C"
+            grade="3"
         if(i%4==3):
-            grade="D"
+            grade="4"
 
         cdb.execute_query("""
             INSERT INTO agent_score (
