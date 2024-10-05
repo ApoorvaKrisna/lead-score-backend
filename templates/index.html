@@ -189,14 +189,18 @@
                 <tr>
                     <th>Lead ID</th>
                     <th>Lead Status</th>
+                    <th>Name</th>
+                    <th>Team</th>
                     <th>Update Status</th>
                     <th>Submit</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="agentdata">
                 <tr>
                     <td>1</td>
                     <td>Booked</td>
+                    <td>Name</td>
+                    <td>Team</td>
                     <td>
                         <select>
                             <option value="Booked">Booked</option>
@@ -291,6 +295,27 @@
                 url: 'http://127.0.0.1:5001/getallagents?agentId='+v,
                 method: 'GET',
                 success: function(response) {
+                  let tbody=document.getElementById("agentdata")
+                  tbody.innerHTML=""
+                  for(let i of response){
+                    tbody.innerHTML+=`
+                      <tr>
+                    <td>${i[12]}</td>
+                    <td>${i[11]}</td>
+                    <td>${i[1]}</td>
+                    <td>${i[2]}</td>
+                    <td>
+                        <select>
+                            <option value="Booked">Booked</option>
+                            <option value="Case Login">Case Login</option>
+                            <option value="Documentation">Documentation</option>
+                            <option value="Issued">Issued</option>
+                        </select>
+                    </td>
+                    <td><button onclick="updateLeadStatus()">Update</button></td>
+                </tr>
+                    ` 
+                  }
                   console.log(response);
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
