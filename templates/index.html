@@ -233,6 +233,7 @@
     <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 
     <script>
+        let url=url+''
         function showTab(tabId) {
             const tabs = document.querySelectorAll('.tab');
             tabs.forEach(tab => {
@@ -291,7 +292,7 @@
 
         function updateLeadStatus(lead_id) {
             $.ajax({
-                url: 'http://192.168.1.4:5000/updateLeadStatus',
+                url: url+'/updateLeadStatus',
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -301,7 +302,7 @@
                     "lead_id":lead_id,
                 }),
                 success: function(response) {
-                  let tbody=document.getElementById("agentdata")
+                  document.getElementById("curstatus"+lead_id).innerText=document.getElementById("status"+lead_id).value
                   
                   console.log(response);
                 },
@@ -313,7 +314,7 @@
         
         function fetchLeadMapping() {
             $.ajax({
-                url: 'http://192.168.1.4:5000/GetLeadMapping/',
+                url: url+'/GetLeadMapping/',
                 method: 'GET',
                 success: function(response) {
                     let tbody = document.getElementById("leadAgentMappingData");
@@ -342,7 +343,7 @@
         function fetchAgentList() {
             let v=document.getElementById("agentId").value
             $.ajax({
-                url: 'http://192.168.1.4:5000/getallagents?agentId='+v,
+                url: url+'/getallagents?agentId='+v,
                 method: 'GET',
                 success: function(response) {
                   let tbody=document.getElementById("agentdata")
@@ -351,7 +352,7 @@
                     tbody.innerHTML+=`
                       <tr>
                     <td>${i[12]}</td>
-                    <td>${i[11]}</td>
+                    <td id="curstatus${i[12]}">${i[11]}</td>
                     <td>${i[1]}</td>
                     <td>${i[2]}</td>
                     <td>
