@@ -18,6 +18,10 @@ COUNTER={
 
 @agent.route('/agentAllocation', methods=['POST'])
 def agent_allocation():
+    return agent_allocation_helper(request.json["grade"],request.json["team"])
+
+def agent_allocation_helper(grade, team, leadid):
+    # no action of lead already exists in mapping
     cdb=CockroachClient()
     cdb.connect()
     rec=cdb.fetch_all('''select * from agent_score where grade = %s and team_name=%s order by grade_ranking desc;''',(request.json["grade"],request.json["team"]))
