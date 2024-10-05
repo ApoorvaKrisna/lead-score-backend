@@ -227,7 +227,12 @@ def score_lead():
         print(team)
         
         try:
-            allocationResponse = agent_allocation_helper(grade, team, lead_id)
+            json={
+                "grade":grade,
+                "team":team,
+                "leadid":lead_id
+            }
+            allocationResponse = agent_allocation_helper(json)
         except:
             allocationResponse = "allocation failed"
 

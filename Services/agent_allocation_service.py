@@ -18,13 +18,13 @@ COUNTER={
 
 @agent.route('/agentAllocation', methods=['POST'])
 def agent_allocation():
-    return agent_allocation_helper(request.json["grade"],request.json["team"])
+    return agent_allocation_helper(request.json)
 
-def agent_allocation_helper(grade, team, leadid):
+def agent_allocation_helper(request):
     # no action of lead already exists in mapping
     cdb=CockroachClient()
     cdb.connect()
-    rec=cdb.fetch_all('''select * from agent_score where grade = %s and team_name=%s order by grade_ranking desc;''',(request.json["grade"],request.json["team"]))
+    rec=cdb.fetch_all('''select * from agent_score where grade = %s and team_name=%s order by grade_ranking desc;''',(request["grade"],request["team"]))
     print(rec)
     cdb.close()
     n=len(rec)
@@ -35,7 +35,8 @@ def agent_allocation_helper(grade, team, leadid):
         dict["username"]=entry[1]
         dict["grade"]=entry[-3]
         dict["bucket"]=entry[-1]
-        dict["team"]=request.json["team"]
+        dict["team"]=request["team"]
+        dict["leadid"]=request["leadid"]
         ls.append(dict)
         # if(int(entry[-1])==0):
         #     allocate_lead(dict)
@@ -61,11 +62,13 @@ def allocate_lead(dict):
     cdb.connect()
     cdb.execute_query("""
             INSERT INTO lead_mapping (
+                lead_id,
                 employeeid,
                 team,
                 created_on 
-            ) VALUES (%s, %s,%s)
+            ) VALUES (%s, %s,%s,%s)
         """, (
+            dict['leadid'],
             dict['employeeid'],
             dict['team'],
             datetime.datetime.now(datetime.timezone.utc)
