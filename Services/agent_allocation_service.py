@@ -150,7 +150,7 @@ def save_json():
 
 @agent.route('/ExcelToTable', methods=['POST'])
 def upload_excel_to_db():
-    df = pd.read_excel('excel_file')
+    df = pd.read_excel('July24_AgentGradeModelData.xlsx')
     cdb=CockroachClient()
     cdb.connect()
 
