@@ -14,7 +14,7 @@ MODEL_CHUNKS_URLS = [
 # To reload the dictionary from the file
 scores_dict = joblib.load('scores_dict.pkl')
 
-preprocessor = joblib.load('preprocessor.pkl')
+scaler = joblib.load('scaler.pkl')
 
 # Updating the list of columns to consider
 independent_features = [
@@ -23,15 +23,14 @@ independent_features = [
     'compare_flag', 'limited_flag', 'trop_flag','TobaccoUser','ProfessionType','educationQualificationId'
 ]
 
-def preprocess_data(data, scores_dict):
 
-    # Replace NaN in 'Booking' and 'APE' and education Qualification with 0
+def preprocess_data(data, scores_dict):
     data = data.reindex(
         columns=data.columns.union(
             ['Booking', 'APE', 'educationQualificationId', 'TobaccoUser', 'ProfessionType'], sort=False)).fillna(
-                {'Booking': 0, 'APE': 0, 'educationQualificationId': 'Other', 'TobaccoUser': 'Other', 'ProfessionType': 'Other'})
+                {'Booking': 0, 'APE': 0, 'educationQualificationId': 0, 'TobaccoUser': 0, 'ProfessionType': 0})
 
-
+    print(data['TobaccoUser'])
     # Handle invalid(0 and negative Income) values in 'AnnualIncome' if the column exists
     if 'AnnualIncome' in data.columns:
         data['AnnualIncome'].replace([0, -float('inf')], 'other', inplace=True)
@@ -85,13 +84,39 @@ def preprocess_data(data, scores_dict):
     # Apply mean APE scores to the categorical columns
     for column, scores in scores_dict.items():
         if column in data.columns:
-            # Ensure the column is treated as categorical for merging
+            # Convert values to string for consistent lookups
             data[column] = data[column].astype(str)
             scores[column] = scores[column].astype(str)
+            
+            # Perform the initial merge
             data = pd.merge(data, scores, on=column, how='left', suffixes=('', '_score'))
-            print(column, scores)
+            
+            # Identify rows where the score is NaN
+            nan_rows = data[f'{column}_score'].isna()
+            
+            # Go back to the original column and handle NaN cases
+            for idx in data[nan_rows].index:
+                original_value = data.loc[idx, column]
+                
+                # Check if the original value is an integer (like '0' or '1') or a float-like string ('0.0', '1.0')
+                try:
+                    numeric_value = float(original_value)
+                    if numeric_value.is_integer():
+                        int_value_str = str(int(numeric_value))  # Integer form without .0
+                        float_value_str = f"{int(numeric_value)}.0"  # Float form with .0
+            
+                        # Try to find a match in scores_dict (either as '0' or '0.0')
+                        if int_value_str in scores[column].values:
+                            data.loc[idx, f'{column}_score'] = scores.loc[scores[column] == int_value_str, f'{column}_score'].values[0]
+                        elif float_value_str in scores[column].values:
+                            data.loc[idx, f'{column}_score'] = scores.loc[scores[column] == float_value_str, f'{column}_score'].values[0]
+                except ValueError:
+                    # If it's not a number, continue without changes
+                    pass
+    
     # print("data merged")
     # Drop original categorical columns and keep only the score columns
+    
     categorical_scores = [f'{col}_score' for col in scores_dict.keys()]
     data = data[categorical_scores]
     print(data.columns)
@@ -163,8 +188,8 @@ def score_lead():
         # Preprocess the input data
         processed_data = pipeline.fit_transform(lead_df)
         processed_data_df = processed_data.rename(columns=lambda col: col.replace('_score', ''))
-        processed_data_scaled = preprocessor.fit_transform(processed_data_df)
-        print("preprocess_data")
+        processed_data_scaled = scaler.transform(processed_data_df)
+        print(processed_data_scaled)
         
         # Predict the probability
         lead_score = float(model.predict(processed_data_scaled)[0][0])
