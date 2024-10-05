@@ -214,6 +214,8 @@
                 <tr>
                     <td>2</td>
                     <td>Case Login</td>
+                    <td>Name</td>
+                    <td>Team</td>
                     <td>
                         <select>
                             <option value="Booked">Booked</option>
@@ -286,8 +288,23 @@
             // Filter agent logic
         }
 
-        function updateLeadStatus() {
-            alert('Lead Status Updated!');
+        function updateLeadStatus(lead_id) {
+            $.ajax({
+                url: 'http://127.0.0.1:5001/updateLeadStatus',
+                method: 'POST',
+                data:JSON.stringify({
+                    "status":document.getElementById("status"+lead_id).value,
+                    "lead_id":lead_id,
+                }),
+                success: function(response) {
+                  let tbody=document.getElementById("agentdata")
+                  
+                  console.log(response);
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                  console.log(errorThrown);
+                }
+              });
         }
         function fetchAgentList() {
             let v=document.getElementById("agentId").value
@@ -305,14 +322,14 @@
                     <td>${i[1]}</td>
                     <td>${i[2]}</td>
                     <td>
-                        <select>
+                        <select id="status${i[12]}">
                             <option value="Booked">Booked</option>
                             <option value="Case Login">Case Login</option>
                             <option value="Documentation">Documentation</option>
                             <option value="Issued">Issued</option>
                         </select>
                     </td>
-                    <td><button onclick="updateLeadStatus()">Update</button></td>
+                    <td><button onclick="updateLeadStatus(${i[12]})">Update</button></td>
                 </tr>
                     ` 
                   }

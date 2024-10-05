@@ -9,6 +9,8 @@ import pandas as pd
 from DBCLients.cockroach_client import CockroachClient
 
 agent = Blueprint('agentAllocation', __name__)
+
+
 COUNTER={
     "1":0,
     "2":0,
@@ -50,6 +52,7 @@ def agent_allocation_helper(request):
         
         ch=ConsistentHashing()
         ch.add_node(dict)
+    print(dict)
     allocate_lead(ls[COUNTER[str(dict["grade"])]%n])
     update_agent(ls[COUNTER[str(dict["grade"])]%n])
     COUNTER[str(dict["grade"])]=COUNTER[str(dict["grade"])]+1  
@@ -114,6 +117,15 @@ def get_leads_mapping():
     cdb.connect()
     print('''select * from lead_mapping''')
     rec=cdb.fetch_all('''select * from lead_mapping''')
+    cdb.close()
+    return jsonify(rec), 201
+
+@agent.route('/updateLeadStatus/', methods=['POST']) 
+def update_Lead_Status():
+    cdb=CockroachClient()
+    cdb.connect()
+    #print('''select * from lead_mapping''')
+    rec=cdb.execute_query('''update lead_mapping set status='''+"'"+request.json["status"]+"where lead_id="+request.json["lead_id"])
     cdb.close()
     return jsonify(rec), 201
 
