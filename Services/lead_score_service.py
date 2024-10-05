@@ -5,6 +5,7 @@ import pandas as pd
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
 from pymongo import MongoClient
+from Services.agent_allocation_service import agent_allocation_helper
 
 lead = Blueprint('leadScore', __name__)
 
@@ -224,12 +225,19 @@ def score_lead():
         # Allocate team
         team = allocate_team_based_on_features(lead_data)
         print(team)
-        #send_to_allocate(new_lead,score)
         
-        return jsonify({
+        try:
+            allocationResponse = agent_allocation_helper(grade, team, lead_id)
+        except:
+            allocationResponse = "allocation failed"
+
+        response = jsonify({
             "score": lead_score,
             "grade": grade,
-            "team": team
+            "team": team,
+            "status": allocationResponse
         })
+        
+        return response
     except Exception as e:
         return jsonify({"error": str(e)}), 400
