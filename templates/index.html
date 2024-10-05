@@ -141,12 +141,13 @@
             <thead>
                 <tr>
                     <th>Lead ID</th>
+                    <th>Generation Time</th>
                     <th>Lead Status</th>
                     <th>Assigned Agent</th>
                     <th>Process</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="leadAgentMappingData">
                 <!-- Sample Data -->
                 <tr>
                     <td>1</td>
@@ -306,10 +307,39 @@
                 }
               });
         }
+        
+        function fetchLeadMapping() {
+            $.ajax({
+                url: 'http://192.168.1.4:5000/GetLeadMapping/',
+                method: 'GET',
+                success: function(response) {
+                    let tbody = document.getElementById("leadAgentMappingData");
+                    tbody.innerHTML = ""; // Clear the existing content
+
+                    // Loop through the response to populate the table
+                    for (let i of response) {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${i[6]}</td>  <!-- Lead ID -->
+                                <td>${i[3] || 'N/A'}</td> <!-- Lead Generation Time (null check) -->
+                                <td>${i[5] || 'N/A'}</td> <!-- Lead Status (null check) -->
+                                <td>${i[0]}</td>  <!-- Assigned Agent (Agent ID) -->
+                                <td>${i[2] || 'N/A'}</td> <!-- Process (null check) -->
+                            </tr>
+                        `;
+                    }
+                    console.log("Lead mapping data fetched successfully.");
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.error("Error fetching lead mapping data:", errorThrown);
+                }
+            });
+        }
+
         function fetchAgentList() {
             let v=document.getElementById("agentId").value
             $.ajax({
-                url: 'http://127.0.0.1:5001/getallagents?agentId='+v,
+                url: 'http://192.168.1.4:5000/getallagents?agentId='+v,
                 method: 'GET',
                 success: function(response) {
                   let tbody=document.getElementById("agentdata")
@@ -340,6 +370,8 @@
                 }
               });
         }
+
+        fetchLeadMapping();
     </script>
 
 </body>
