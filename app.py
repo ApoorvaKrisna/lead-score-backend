@@ -3,7 +3,6 @@ from flask_cors import CORS
 from Services.lead_score_service import lead
 from Services.agent_allocation_service import agent
 
-from Services.notification_service import notify
 
 # Initialize Flask app
 app = Flask(__name__)
