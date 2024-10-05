@@ -113,7 +113,7 @@
     <!-- Lead Input Tab -->
     <div id="lead-input" class="tab active">
         <h2>Lead Input Dashboard</h2>
-        <textarea id="leadInputJson">{ "age": 33, "job": "technician", "marital": "single", "education": "secondary", "default": "no", "balance": 29, "housing": "yes", "loan": "no", "contact": "NaN", "day_of_week": 5, "month": "may", "duration": 151, "campaign": 1, "pdays": -1, "previous": 0, "poutcome": "NaN" }</textarea>
+        <textarea id="leadInputJson">{"leadid":672970889,"CreatedON":1719860192220,"customerid":101752487,"leadsource":"PBMobile","Custom_UTM_U":"02. SEO","leadrank":210,"leadscore":9955.0,"AssignedToUserID":52479.0,"Age":33.0,"AnnualIncome":1000000,"isbirthday":0,"Income_Flag":"APE","Investmenttypeid":0.0,"IsAssign":1,"AssignedbyuserID":124.0,"AgentGrade":277.0,"AssigntoGroupID":3037.0,"assignedon":1719860586797,"AssignedHR":19.0,"UserGroupname":"Orissa_FOS","DateOfBirth":663120000000,"DOB":663120000000,"isctc":0.0,"employeeid":"PW51358","username":"Himansu Samal","Brandname1":"03. Rest","BRANDname":"Generic","IsNRI":0,"TobaccoUser":0.0,"ProfessionType":0.0,"educationQualificationId":0.0,"IsRepeat":0,"Selected_Insurer":"No Self Selection","IsSelfSelect":0,"Previous_Booked":0,"CTCclickdate":0.0,"compare_flag":0,"limited_flag":0,"trop_flag":0,"Booking":0.0,"APE":0.0,"BkgDT":1861920000000,"ISCTCNEW":0}</textarea>
         <button onclick="formatJSON()">Format JSON</button>
         <button onclick="submitLead()">Submit Lead</button>
         <h3>Lead Result:</h3>
@@ -244,8 +244,32 @@
         }
 
         function submitLead() {
-            const leadResult = { "score": 850, "grade": "A", "team": 3 }; // Simulated response
-            document.getElementById('leadResult').innerText = `Score: ${leadResult.score}, Grade: ${leadResult.grade}, Assigned Team: ${leadResult.team}`;
+            const leadInput = document.getElementById('leadInputJson').value;
+
+            // Make sure the input is valid JSON
+            try {
+                const leadData = JSON.parse(leadInput);
+
+                // Send the lead data to the /score API
+                fetch("{{ url_for('leadScore.score_lead') }}", { 
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(leadData)
+                })
+                .then(response => response.json())
+                .then(leadResult => {
+                    document.getElementById('leadResult').innerText = 
+                        `Score: ${leadResult.score}, Grade: ${leadResult.grade}, Assigned Team: ${leadResult.team}`;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Failed to submit lead');
+                });
+            } catch (error) {
+                alert('Invalid JSON input');
+            }
         }
 
         function createAgent() {
