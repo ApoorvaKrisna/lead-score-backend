@@ -43,6 +43,7 @@ def agent_allocation():
         #     COUNTER[dict["grade"]]=COUNTER[dict["grade"]]+1
         
         ch=ConsistentHashing()
+        ch.add_node(dict)
     allocate_lead(ls[COUNTER[dict["grade"]]%n])
     update_agent(ls[COUNTER[dict["grade"]]%n])
     COUNTER[dict["grade"]]=COUNTER[dict["grade"]]+1  
@@ -102,16 +103,16 @@ def get_leads_for_agent():
 def save_json():
     json1 = request.json
     i=0
-    cdb=CockroachClient()
-    cdb.connect()
-    cdb.execute_query('''CREATE TABLE lead_mapping (
-	employeeid VARCHAR(20),
-	leadid serial PRIMARY KEY,
-	team VARCHAR ( 50 ) NOT NULL,
-	created_on TIMESTAMP NOT NULL,
-);''')
-    cdb.close()
-    return jsonify("lead allocated"), 201
+#     cdb=CockroachClient()
+#     cdb.connect()
+#     cdb.execute_query('''CREATE TABLE lead_mapping (
+# 	employeeid VARCHAR(20),
+# 	leadid serial PRIMARY KEY,
+# 	team VARCHAR ( 50 ) NOT NULL,
+# 	created_on TIMESTAMP NOT NULL,
+# );''')
+#     cdb.close()
+#     return jsonify("lead allocated"), 201
     for entry in json.loads(data):
         cdb=CockroachClient()
         cdb.connect()
