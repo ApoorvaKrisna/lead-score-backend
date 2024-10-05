@@ -269,7 +269,7 @@
                 .then(response => response.json())
                 .then(leadResult => {
                     document.getElementById('leadResult').innerText = 
-                        `Score: ${leadResult.score}, Grade: ${leadResult.grade}, Assigned Team: ${leadResult.team}`;
+                        `Score: ${leadResult.score} \nGrade: ${leadResult.grade} \nAssigned Team: ${leadResult.team} \nAllocation Response: ${leadResult.status}`;
                 })
                 .catch(error => {
                     console.error('Error:', error);
