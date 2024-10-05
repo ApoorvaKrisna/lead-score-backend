@@ -24,6 +24,8 @@ def agent_allocation():
 
 def agent_allocation_helper(request):
     # no action of lead already exists in mapping
+    if(lead_exist(request["leadid"])):
+        return "lead exists"
     cdb=CockroachClient()
     cdb.connect()
     rec=cdb.fetch_all('''select * from agent_score where grade = %s and team_name=%s order by grade_ranking desc;''',(request["grade"],request["team"]))
@@ -57,9 +59,14 @@ def agent_allocation_helper(request):
     update_agent(ls[COUNTER[str(dict["grade"])]%n])
     COUNTER[str(dict["grade"])]=COUNTER[str(dict["grade"])]+1  
     print(ls)
-    return jsonify("lead allocated"), 201
+    return jsonify(dict), 201
 
-
+def lead_exist(id):
+    cdb=CockroachClient()
+    cdb.connect()
+    rec=cdb.fetch_all('''select * from lead_mapping where lead_id='''+str(id))
+    cdb.close()
+    return len(rec)>0
 def allocate_lead(dict):
     cdb=CockroachClient()
     cdb.connect()
