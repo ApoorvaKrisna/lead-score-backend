@@ -227,6 +227,7 @@ def score_lead():
         print(team)
         
         try:
+            
             json={
                 "grade":grade,
                 "team":team,
