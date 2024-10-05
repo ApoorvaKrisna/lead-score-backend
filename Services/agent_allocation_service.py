@@ -86,7 +86,7 @@ def get_all_agents():
     id = request.args.get('agentId')
     cdb=CockroachClient()
     cdb.connect()
-    rec=cdb.fetch_all('''select * from agent_score where employeeid='''+"'"+id.upper()+"'")
+    rec=cdb.fetch_all('''select * from agent_score ags join lead_mapping lm on lm.employeeid=ags.employeeid where ags.employeeid='''+"'"+id.upper()+"'")
     cdb.close()
     return jsonify(rec), 201
 
