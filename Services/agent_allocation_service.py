@@ -100,6 +100,15 @@ def get_leads_for_agent():
     cdb.close()
     return jsonify(rec), 201
     
+@agent.route('/GetLeadMapping/', methods=['GET']) 
+def get_leads_mapping():
+    cdb=CockroachClient()
+    cdb.connect()
+    print('''select * from lead_mapping''')
+    rec=cdb.fetch_all('''select * from lead_mapping''')
+    cdb.close()
+    return jsonify(rec), 201
+
 @agent.route('/JsonToTable', methods=['POST'])
 def save_json():
     json1 = request.json
