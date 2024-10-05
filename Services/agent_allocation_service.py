@@ -9,19 +9,24 @@ import pandas as pd
 from DBCLients.cockroach_client import CockroachClient
 
 agent = Blueprint('agentAllocation', __name__)
+
+
 COUNTER={
-    "A":0,
-    "B":0,
-    "C":0,
-    "D":0
+    "1":0,
+    "2":0,
+    "3":0,
+    "4":0
 }
 
 @agent.route('/agentAllocation', methods=['POST'])
 def agent_allocation():
+    return agent_allocation_helper(request.json)
+
+def agent_allocation_helper(request):
     cdb=CockroachClient()
     cdb.connect()
-    rec=cdb.fetch_all('''select * from agent_score where grade = %s and Matrix_Group_y=%s order by employeeid;''',(request.json["grade"],request.json["team"]))
-    print(rec)
+    rec=cdb.fetch_all('''select * from agent_score where grade = %s and team_name=%s order by grade_ranking desc;''',(request["grade"],request["team"]))
+    # print(rec)
     cdb.close()
     n=len(rec)
     ls=[]
@@ -29,9 +34,10 @@ def agent_allocation():
         dict={}
         dict["employeeid"]=entry[0]
         dict["username"]=entry[1]
-        dict["grade"]=entry[-2]
+        dict["grade"]=entry[-3]
         dict["bucket"]=entry[-1]
-        dict["team"]=request.json["team"]
+        dict["team"]=request["team"]
+        dict["leadid"]=request["leadid"]
         ls.append(dict)
         # if(int(entry[-1])==0):
         #     allocate_lead(dict)
@@ -45,23 +51,34 @@ def agent_allocation():
         
         ch=ConsistentHashing()
         ch.add_node(dict)
-    allocate_lead(ls[COUNTER[dict["grade"]]%n])
-    update_agent(ls[COUNTER[dict["grade"]]%n])
-    COUNTER[dict["grade"]]=COUNTER[dict["grade"]]+1  
-    print(ls)
-    return jsonify("lead allocated"), 201
+    # no action of lead already exists in mapping
+    if(lead_exist(request["leadid"])):
+        return jsonify(dict), 201
+    # print(dict)
+    allocate_lead(ls[COUNTER[str(dict["grade"])]%n])
+    update_agent(ls[COUNTER[str(dict["grade"])]%n])
+    COUNTER[str(dict["grade"])]=COUNTER[str(dict["grade"])]+1  
+    # print(ls)
+    return jsonify(dict), 201
 
-
+def lead_exist(id):
+    cdb=CockroachClient()
+    cdb.connect()
+    rec=cdb.fetch_all('''select * from lead_mapping where lead_id='''+str(id))
+    cdb.close()
+    return len(rec)>0
 def allocate_lead(dict):
     cdb=CockroachClient()
     cdb.connect()
     cdb.execute_query("""
             INSERT INTO lead_mapping (
+                lead_id,
                 employeeid,
                 team,
                 created_on 
-            ) VALUES (%s, %s,%s)
+            ) VALUES (%s, %s,%s,%s)
         """, (
+            dict['leadid'],
             dict['employeeid'],
             dict['team'],
             datetime.datetime.now(datetime.timezone.utc)
@@ -83,23 +100,43 @@ def update_agent(dict):
     
 @agent.route('/getallagents', methods=['GET']) 
 def get_all_agents():
+    id = request.args.get('agentId')
     cdb=CockroachClient()
     cdb.connect()
-    rec=cdb.fetch_all('''select * from agent_score''')
+    rec=cdb.fetch_all('''select * from agent_score ags join lead_mapping lm on lm.employeeid=ags.employeeid where ags.employeeid='''+"'"+id.upper()+"'")
     cdb.close()
     return jsonify(rec), 201
 
 @agent.route('/GetAllLeads/', methods=['GET']) 
 def get_leads_for_agent():
     id = request.args.get('agentId')
-    print(type(id))
+    # print(type(id))
     cdb=CockroachClient()
     cdb.connect()
-    print('''select * from lead_mapping where employeeid='''+id.upper())
+    # print('''select * from lead_mapping where employeeid='''+id.upper())
     rec=cdb.fetch_all('''select * from lead_mapping where employeeid='''+"'"+id.upper()+"'")
     cdb.close()
     return jsonify(rec), 201
     
+@agent.route('/GetLeadMapping/', methods=['GET']) 
+def get_leads_mapping():
+    cdb=CockroachClient()
+    cdb.connect()
+    # print('''select * from lead_mapping''')
+    rec=cdb.fetch_all('''select * from lead_mapping''')
+    cdb.close()
+    return jsonify(rec), 201
+
+@agent.route('/updateLeadStatus/', methods=['POST']) 
+def update_Lead_Status():
+    cdb=CockroachClient()
+    cdb.connect()
+    #print('''select * from lead_mapping''')
+    # print('''update lead_mapping set status='''+"'"+request.json["status"]+"'"+" where lead_id="+str(request.json["lead_id"]))
+    rec=cdb.execute_query('''update lead_mapping set status='''+"'"+request.json["status"]+"'"+" where lead_id="+str(request.json["lead_id"]))
+    cdb.close()
+    return jsonify(rec), 201
+
 @agent.route('/JsonToTable', methods=['POST'])
 def save_json():
     json1 = request.json
@@ -121,13 +158,13 @@ def save_json():
         cdb.connect()
         grade=""
         if(i%4==0):
-            grade="A"
+            grade="1"
         if(i%4==1):
-            grade="B"
+            grade="2"
         if(i%4==2):
-            grade="C"
+            grade="3"
         if(i%4==3):
-            grade="D"
+            grade="4"
 
         cdb.execute_query("""
             INSERT INTO agent_score (
@@ -187,7 +224,8 @@ class ConsistentHashing:
             for node in nodes:
                 self.add_node(node)
         else:
-            print(nodes)  # Print error if fetching nodes failed
+            ""
+            # print(nodes)  # Print error if fetching nodes failed
 
     def remove_node(self, node):
         """Remove a node and its virtual nodes from the hash ring."""

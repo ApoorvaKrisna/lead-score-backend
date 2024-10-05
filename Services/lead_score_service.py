@@ -2,9 +2,11 @@ from flask import Blueprint, jsonify, request
 import joblib
 import numpy as np
 import pandas as pd
+import json
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import FunctionTransformer
 from pymongo import MongoClient
+from Services.agent_allocation_service import agent_allocation_helper
 
 lead = Blueprint('leadScore', __name__)
 
@@ -163,20 +165,23 @@ def lead_grade(lead_score):
 
 # Define the allocation function based on features
 def allocate_team_based_on_features(row):
-    if row['AnnualIncome'] > 1500000:
-        return "HNI"
-    elif row['IsRepeat'] > 0:
-        return "BKGS"
-    elif row['isbirthday'] == 1:
-        return "BDAY"
-    elif row['isctc'] == 1:
-        return "Marathi-APE"
-    elif row['Age'] < 30:
-        return "APE Salaried"
-    elif 30 <= row['Age'] <= 50:
-        return "HNI"
+    profession_type = row.get("ProfessionType", None)
+    is_birthday = row.get("isbirthday", 0)  # Default to 0 if 'isbirthday' is not present
+    annual_income = row.get("AnnualIncome", 0)  # Default to 0 if 'AnnualIncome' is not present
+    if profession_type == "Self-Employed":
+        if is_birthday == 1:
+            return "BDAY - Self Employed"
+        if annual_income > 1500000:
+            return "APE-SELF-EMPLOYED"
+        else:
+            return "BKGS Self Employed"
     else:
-        return "OTHER"
+        if is_birthday == 1:
+            return "BDAY"
+        if annual_income > 1500000:
+            return "APE Salaried"
+        else:
+            return "BKGS"
 
 
 @lead.route('/testMongo', methods=['GET'])
@@ -204,32 +209,46 @@ def score_lead():
         )
         
         lead_df = pd.DataFrame([lead_data])
-        print(lead_df.head())
+        # print(lead_df.head())
         
         # Preprocess the input data
         processed_data = pipeline.fit_transform(lead_df)
         processed_data_df = processed_data.rename(columns=lambda col: col.replace('_score', ''))
         processed_data_scaled = scaler.transform(processed_data_df)
-        print(processed_data_scaled)
+        # print(processed_data_scaled)
         
         # Predict the probability
         lead_score = float(model.predict(processed_data_scaled)[0][0])
-        print(lead_score)
-        print(type(lead_score))
+        # print(lead_score)
+        # print(type(lead_score))
         
         # Determine the grade
         grade = lead_grade(lead_score)
-        print(grade)
+        # print(grade)
         
         # Allocate team
         team = allocate_team_based_on_features(lead_data)
-        print(team)
-        #send_to_allocate(new_lead,score)
+        # print(team)
         
-        return jsonify({
+        allocationResponse = "allocation response"
+        try:
+            jsonRespose={
+                "grade":grade,
+                "team":team,
+                "leadid":lead_id
+            }
+            allocationResponse = json.dumps(agent_allocation_helper(jsonRespose)[0].get_json())
+        except:
+            allocationResponse = "allocation failed"
+
+        response = jsonify({
             "score": lead_score,
             "grade": grade,
-            "team": team
+            "team": team,
+            "status": allocationResponse
         })
+        # print(jsonRespose)
+        
+        return response
     except Exception as e:
         return jsonify({"error": str(e)}), 400

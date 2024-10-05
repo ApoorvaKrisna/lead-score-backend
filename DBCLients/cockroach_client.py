@@ -154,9 +154,10 @@ class CockroachClient:
                 password=self.password
             )
             self.cursor = self.connection.cursor()
-            print("Connection to CockroachDB successful!")
+            # print("Connection to CockroachDB successful!")
         except OperationalError as e:
-            print(f"The error '{e}' occurred")
+            ""
+            # print(f"The error '{e}' occurred")
 
     def execute_query(self, query, params=None):
         """Execute a single query."""
@@ -166,9 +167,10 @@ class CockroachClient:
             else:
                 self.cursor.execute(query)
             self.connection.commit()
-            print(f"query Executed")
+            # print(f"query Executed")
         except OperationalError as e:
-            print(f"The error '{e}' occurred")
+            ""
+            # print(f"The error '{e}' occurred")
 
     def fetch_all(self, query, params=None):
         """Fetch all results from a query."""
@@ -179,7 +181,8 @@ class CockroachClient:
                 self.cursor.execute(query)
             return self.cursor.fetchall()
         except OperationalError as e:
-            print(f"The error '{e}' occurred")
+            ""
+            # print(f"The error '{e}' occurred")
             return None
 
     def close(self):
@@ -188,4 +191,4 @@ class CockroachClient:
             self.cursor.close()
         if self.connection:
             self.connection.close()
-        print("Connection closed.")
+        # print("Connection closed.")

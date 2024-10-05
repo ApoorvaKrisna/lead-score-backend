@@ -105,7 +105,6 @@
 
     <div class="tabs">
         <button onclick="showTab('lead-input')">Lead Input</button>
-        <button onclick="showTab('create-agent')">Create Agent</button>
         <button onclick="showTab('overall-status')">Overall Status</button>
         <button onclick="showTab('agent-dashboard')">Agent Dashboard</button>
     </div>
@@ -121,7 +120,7 @@
     </div>
 
     <!-- Create Agent Tab -->
-    <div id="create-agent" class="tab">
+    <!-- <div id="create-agent" class="tab">
         <h2>Create Agent</h2>
         <form id="agentForm">
             <label for="agentName">Agent Name:</label>
@@ -132,21 +131,23 @@
         </form>
         <h3>Agent Result:</h3>
         <p id="agentResult"></p>
-    </div>
+    </div> -->
 
     <!-- Overall Lead Status Tab -->
     <div id="overall-status" class="tab">
         <h2>Overall Lead Status and Agent Mapping</h2>
+        <button onclick="fetchLeadMapping()">Refresh Data</button>
         <table id="leadStatusTable">
             <thead>
                 <tr>
                     <th>Lead ID</th>
+                    <th>Generation Time</th>
                     <th>Lead Status</th>
                     <th>Assigned Agent</th>
                     <th>Process</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="leadAgentMappingData">
                 <!-- Sample Data -->
                 <tr>
                     <td>1</td>
@@ -173,30 +174,34 @@
     <!-- Agent Dashboard Tab -->
     <div id="agent-dashboard" class="tab">
         <h2>Agent Dashboard</h2>
-        <label for="teamDropdown">Filter by Team:</label>
+        <!-- <label for="teamDropdown">Filter by Team:</label>
         <select id="teamDropdown" onchange="filterAgentsByTeam()">
             <option value="Team A">Team A</option>
             <option value="Team B">Team B</option>
             <option value="Team C">Team C</option>
-        </select>
-
+        </select>  -->
+        <div>
         <label for="agentId">Enter Agent ID:</label>
-        <input type="text" id="agentId" placeholder="Enter Agent ID"><br><br>
-
+        <input type="text" id="agentId" placeholder="Enter Agent ID" ><br><br>
+        <button onclick="fetchAgentList()">Fetch</button></div>
         <h3>Assigned Leads:</h3>
         <table id="agentLeadTable">
             <thead>
                 <tr>
                     <th>Lead ID</th>
                     <th>Lead Status</th>
+                    <th>Name</th>
+                    <th>Team</th>
                     <th>Update Status</th>
                     <th>Submit</th>
                 </tr>
             </thead>
-            <tbody>
+            <tbody id="agentdata">
                 <tr>
                     <td>1</td>
                     <td>Booked</td>
+                    <td>Name</td>
+                    <td>Team</td>
                     <td>
                         <select>
                             <option value="Booked">Booked</option>
@@ -210,6 +215,8 @@
                 <tr>
                     <td>2</td>
                     <td>Case Login</td>
+                    <td>Name</td>
+                    <td>Team</td>
                     <td>
                         <select>
                             <option value="Booked">Booked</option>
@@ -223,8 +230,10 @@
             </tbody>
         </table>
     </div>
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
 
     <script>
+        let url='http://192.168.1.4:5000/'
         function showTab(tabId) {
             const tabs = document.querySelectorAll('.tab');
             tabs.forEach(tab => {
@@ -261,7 +270,7 @@
                 .then(response => response.json())
                 .then(leadResult => {
                     document.getElementById('leadResult').innerText = 
-                        `Score: ${leadResult.score}, Grade: ${leadResult.grade}, Assigned Team: ${leadResult.team}`;
+                        `Score: ${leadResult.score} \nGrade: ${leadResult.grade} \nAssigned Team: ${leadResult.team} \nAllocation Response: ${leadResult.status}`;
                 })
                 .catch(error => {
                     console.error('Error:', error);
@@ -281,9 +290,92 @@
             // Filter agent logic
         }
 
-        function updateLeadStatus() {
-            alert('Lead Status Updated!');
+        function updateLeadStatus(lead_id) {
+            $.ajax({
+                url: url+'/updateLeadStatus',
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                data:JSON.stringify({
+                    "status":document.getElementById("status"+lead_id).value,
+                    "lead_id":lead_id,
+                }),
+                success: function(response) {
+                  document.getElementById("curstatus"+lead_id).innerText=document.getElementById("status"+lead_id).value
+                  
+                  console.log(response);
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                  console.log(errorThrown);
+                }
+              });
         }
+        
+        function fetchLeadMapping() {
+            $.ajax({
+                url: url+'/GetLeadMapping/',
+                method: 'GET',
+                success: function(response) {
+                    let tbody = document.getElementById("leadAgentMappingData");
+                    tbody.innerHTML = ""; // Clear the existing content
+
+                    // Loop through the response to populate the table
+                    for (let i of response) {
+                        tbody.innerHTML += `
+                            <tr>
+                                <td>${i[6]}</td>  <!-- Lead ID -->
+                                <td>${i[3] || 'N/A'}</td> <!-- Lead Generation Time (null check) -->
+                                <td>${i[5] || 'N/A'}</td> <!-- Lead Status (null check) -->
+                                <td>${i[0]}</td>  <!-- Assigned Agent (Agent ID) -->
+                                <td>${i[2] || 'N/A'}</td> <!-- Process (null check) -->
+                            </tr>
+                        `;
+                    }
+                    console.log("Lead mapping data fetched successfully.");
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    console.error("Error fetching lead mapping data:", errorThrown);
+                }
+            });
+        }
+
+        function fetchAgentList() {
+            let v=document.getElementById("agentId").value
+            $.ajax({
+                url: url+'/getallagents?agentId='+v,
+                method: 'GET',
+                success: function(response) {
+                  let tbody=document.getElementById("agentdata")
+                  tbody.innerHTML=""
+                  for(let i of response){
+                    tbody.innerHTML+=`
+                      <tr>
+                    <td>${i[12]}</td>
+                    <td id="curstatus${i[12]}">${i[11]}</td>
+                    <td>${i[1]}</td>
+                    <td>${i[2]}</td>
+                    <td>
+                        <select id="status${i[12]}">
+                            <option value="Booked">Booked</option>
+                            <option value="Case Login">Case Login</option>
+                            <option value="Documentation">Documentation</option>
+                            <option value="Issued">Issued</option>
+                        </select>
+                    </td>
+                    <td><button onclick="updateLeadStatus(${i[12]})">Update</button></td>
+                </tr>
+                    ` 
+                  }
+                  console.log(response);
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                  console.log(errorThrown);
+                }
+              });
+        }
+
+        fetchLeadMapping();
     </script>
 
 </body>
